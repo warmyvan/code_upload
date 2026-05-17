@@ -1,0 +1,158 @@
+ID: 'SPUNet_try_4nd_ep'
+
+seed: 0
+
+base:
+  latent_chnl: 6
+  epoch: 1200
+
+  if_test: True
+  
+  if_pretrain: True
+  pre_model_path: 'Ckpt_Slice_ldm/Dim_ckpt_SPUNet_try_3nd_ep/weight/SPUNet_try_3nd_ep454_diffusion_dict.pth'
+
+  # log
+  root_path: '/opt/data/private/fsy_QAQ_fsy/VAE_LDM/Ckpt_Slice_ldm/'
+
+  save_path: 'Dim_'
+  sample_save_pth: 'sample/'
+  model_save_path: 'weight/'
+  loss_save_path: 'loss/'
+
+# #
+  model_save_step: 200
+  loss_save_step: 200
+  loss_set_save_step: 200
+  sample_save_step: 100
+# #
+opt_schl:
+  base_lr: 1.0e-6
+  min_lr: 1.0e-8
+  T_max: 300
+  weight_decay: null
+  base_schl_step: null
+  base_gamma: 0.9
+
+warm_up_opt_schl:
+  parameter: None
+  lr: 1e-3
+  weight_decay: 1e-2
+  batas: (0.9, 0.999)
+  eps: 1e-8
+  opt: None       # assert  opt in ('adade_lta', 'adagrad', 'adam', 'adamw', 'sparse_adam', 'adamax', 'asgd', 'sgd', 'radam', 'rprop', 'rmsprop', 'optimizer', 'nadam', 'lbfgs')
+  sched: null     # assert  sched in ('LambdaLR', 'MultiplicativeLR', 'StepLR', 'MultiStepLR', 'ConstantLR', 'LinearLR', 'ExponentialLR', 'SequentialLR', 'CosineAnnealingLR', 'ChainedScheduler', 'ReduceLROnPlateau', 'CyclicLR', 'CosineAnnealingWarmRestarts', 'OneCycleLR', 'PolynomialLR')
+  sched_: null    # assert  sched_ in ('Cos', 'Cos_Crcl', 'Lnr', 'Lnr_Crcl')
+  warm_step: 5000
+  warm_step2: [5000]
+  start: [1e-5]
+  start2: [1e-5]
+  min: 1e-8
+  min2: [1e-8]
+  max: 1e-3
+  max2: [1e-3]
+  lr_step: 10000
+  lr_step2: [10000]
+  v_i: 0
+
+
+data:
+  data_cfg:
+    if_train: True
+    data_train_path: './Ckpt_vae_new/Dim_3_VAE_0409_01_n1cls_nlb_kl601_chnl6_ep/ep239_cls5/'
+    data_eval_path: null
+    type_label: 22
+    label_path: null
+    mat_key: 'BW'
+    num_sample: 999999
+    batch_size: 5
+    batch_size_test: null
+
+
+  data_cfg_test:
+    if_train: False
+    data_train_path: null
+    data_test_path: './Ckpt_vae_new/Dim_3_VAE_0409_01_n1cls_nlb_kl601_chnl6_ep/test_ep239_cls5/'
+    type_label: 22
+    label_path: null
+    mat_key: 'BW'
+    num_sample: 999999
+    batch_size: null
+    batch_size_test: 1
+
+
+#  data_eval_cfg:
+#    if_train: False
+#    data_train_path: '/opt/data/private/...'
+#    type_label: 2
+#    label_path: null
+#    mat_key: 'BW'
+#    num_sample: 99999
+#    batch_size: 2
+
+model:
+  S_cfg:
+    dim: 3
+    img_size: 12
+    in_chnl: 6
+    out_chnl: 6
+    base_chnl: 64
+
+    # input
+    num_cls: 0
+
+    # Att
+    num_heads: 8  # num_heads = ch // num_head_channels (num_head_channels==dim head)          if num_heads_upsample == -1: num_heads_upsample = num_heads
+    use_fp16: False
+    att_mult: [4, 2, 1]
+    use_checkpoint_att: True
+    norm: True
+    context_dim: 256
+    learnable_pos: True
+    max_slices: 96
+
+    # Res
+    num_res: 1
+    chnl_mult: [ 1,2,4]
+    time_dim: 256  # base_chnl or size //assert model.S_cfg.time_dim== model.Emb_cfg.embeding_dim
+    drop_out: 0
+    use_scale_shift_norm: False
+    use_checkpoint_res: True
+
+    # UD_sample
+    res_updown: False
+    use_checkpoint_ud: True
+    use_conv: True
+
+    # High Frequency Augment
+    use_highfrq: False
+    
+  Emb_cfg:
+    base_chnl: 64
+    embeding_dim: 256 #
+    out_chnl: 64  # base_chnl_f, F_cfg.in_chnl
+    modes: null
+    num_classes: null # null是无类别
+    emb_Frq: False
+    trnbl: False
+    
+
+  ddpm_cfg:
+    timesteps: 1000
+    beta_schedule: "linear"
+    loss_type: 'l1'
+    image_size: 12  # img_size
+    channels: 6
+    log_every_t: 200
+    clip_denoised: True
+    linear_start: 0.0015
+    linear_end: 0.0195
+    cosine_s: 8e-3
+    given_betas: null
+    v_posterior: 0.
+    parameterization: "eps"
+    learn_logvar: False
+    logvar_init: 0.
+
+eval:
+  model_eval_path: '/opt/data/private/...'
+  save_eval_path: 'eval_Ckpt_LDM/'
