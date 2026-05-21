@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"E:/MiniConda/envs/yolov5/python.exe\" test_models.py)"
+    ]
+  }
+}
