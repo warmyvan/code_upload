@@ -72,13 +72,14 @@ class ConditionEncoder(nn.Module):
         self.positional_encoding = nn.Parameter(torch.zeros(1, 96, cond_dim * 2))
         self.porosity_spatial = nn.Conv1d(cond_dim * 2, cond_dim, 1)
 
-    def forward(self, porosity, binary_slice):
+    def forward(self, z_porosities, binary_slice):
         slice_feat = self.slice_encoder(binary_slice)
-        por_emb = self.porosity_encoder(porosity.unsqueeze(-1))
-        por_emb = por_emb.unsqueeze(1) + self.positional_encoding.to(por_emb.device)
-        por_emb = por_emb.permute(0, 2, 1)
-        por_feat = self.porosity_spatial(por_emb)
-        por_feat = por_feat.unsqueeze(-1).expand(-1, -1, -1, binary_slice.shape[-1])
+        # z_porosities: (B, 96) — one scalar per z-slice
+        por_emb = self.porosity_encoder(z_porosities.unsqueeze(-1))     # (B, 96, cond_dim*2)
+        por_emb = por_emb + self.positional_encoding.to(por_emb.device) # (B, 96, cond_dim*2)
+        por_emb = por_emb.permute(0, 2, 1)                             # (B, cond_dim*2, 96)
+        por_feat = self.porosity_spatial(por_emb)                       # Conv1d → (B, cond_dim, 96)
+        por_feat = por_feat.unsqueeze(-1).expand(-1, -1, -1, binary_slice.shape[-1])  # (B, cond_dim, 96, W)
         return por_feat, slice_feat
 
 

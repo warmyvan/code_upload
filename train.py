@@ -236,16 +236,16 @@ def train_diffusion(args):
             with torch.no_grad():
                 z = vae.encode(x).sample()
 
-            por = batch.get("porosity")
-            slc = batch.get("slice_2d")
-            if por is None or por.numel() == 0:
-                por = torch.zeros(x.shape[0], device=device)
+            z_ps = batch.get("z_porosities")      # (B, 96) z-slice porosities
+            slc  = batch.get("slice_2d")           # (B, 1, 96, 96)
+            if z_ps is None or z_ps.numel() == 0:
+                z_ps = torch.zeros(x.shape[0], 96, device=device)
             if slc is None:
                 slc = x[:, :, 0]
-            por, slc = por.to(device), slc.to(device)
+            z_ps, slc = z_ps.to(device), slc.to(device)
 
             with autocast():
-                loss, _ = ddpm(z, device=device, context=por, slice_=slc)
+                loss, _ = ddpm(z, device=device, context=z_ps, slice_=slc)
             scaler.scale(loss).backward()
             scaler.step(opt)
             scaler.update()

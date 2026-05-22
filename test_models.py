@@ -69,7 +69,7 @@ def test_diffusion_shape():
     n = sum(p.numel() for p in ddpm.parameters())
     print(f"    params: {n / 1e6:.1f}M")
     z = torch.randn(2, 6, 12, 12, 12, device=DEVICE)
-    p = torch.rand(2, device=DEVICE) * 0.5
+    p = torch.rand(2, 96, device=DEVICE) * 0.5
     s = torch.randn(2, 1, 96, 96, device=DEVICE)
     with torch.no_grad():
         loss, _ = ddpm(z, device=DEVICE, context=p, slice_=s)
@@ -87,7 +87,7 @@ def test_diffusion_grad():
     sp = SP_Model().to(DEVICE)
     ddpm = DDPM_(sfnet=sp).to(DEVICE)
     ddpm.train()
-    z = torch.randn(1, 6, 12, 12, 12, device=DEVICE)
+    z = torch.randn(1, 3, 12, 12, 12, device=DEVICE)
     p = torch.rand(1, device=DEVICE) * 0.5
     s = torch.randn(1, 1, 96, 96, device=DEVICE)
     loss, _ = ddpm(z, device=DEVICE, context=p, slice_=s)
@@ -110,7 +110,7 @@ def test_diffusion_sample():
     with torch.no_grad():
         out = ddpm.sample(batch_size=1, context=p, slice_=s)
     print(f"    sample: {tuple(out.shape)}")
-    assert out.shape == (1, 6, 12, 12, 12)
+    assert out.shape == (1, 3, 12, 12, 12)
     del sp, ddpm
     gc.collect()
     if DEVICE == "cuda":

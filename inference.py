@@ -132,10 +132,11 @@ def run_pipeline(args, device):
         zps = batch.get("z_porosities")
         fname = batch.get("filename", [f"sample_{i:04d}"])[0]
 
-        if por is None or por.numel() == 0:
-            por = torch.zeros(1, device=device)
+        # z_porosities = 96-element slice-porosity sequence (the condition for diffusion)
+        if zps is None or zps.numel() == 0:
+            zps = torch.zeros(1, 96, device=device)
         else:
-            por = por.to(device)
+            zps = zps.to(device)
         if slc is None:
             slc = x[:, :, 0]
         slc = slc.to(device)
@@ -143,13 +144,11 @@ def run_pipeline(args, device):
         sub = f"{out_dir}/batch_{i:04d}"
         os.makedirs(sub, exist_ok=True)
 
-        # 条件
+        # 保存条件
         _save_tif(slc, f"{sub}/slice_z0.tif")
-        conditions = {}
-        if por.numel() == 1:
+        conditions = {"z_porosities": [round(float(v), 6) for v in zps.squeeze().tolist()]}
+        if por is not None and por.numel() == 1:
             conditions["porosity_3d"] = round(por.item(), 6)
-        if zps is not None:
-            conditions["z_porosities"] = [round(float(v), 6) for v in zps.squeeze().tolist()]
         _save_json(f"{sub}/conditions.json", conditions)
 
         # 原生样本
@@ -157,7 +156,7 @@ def run_pipeline(args, device):
 
         # 扩散采样 → 解码
         with torch.no_grad():
-            z = ddpm.sample(batch_size=1, context=por, slice_=slc)
+            z = ddpm.sample(batch_size=1, context=zps, slice_=slc)
             torch.save(z.cpu(), f"{sub}/latent_z.pt")
             recon = vae.decode(z.to(device))
 
